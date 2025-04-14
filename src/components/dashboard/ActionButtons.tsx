@@ -21,9 +21,11 @@ export function ActionButtons() {
         </Link>
       </Button>
       
-      <Button size="sm" variant="outline">
-        <CreditCard className="mr-1 h-4 w-4" />
-        Add Expense
+      <Button asChild size="sm" variant="outline">
+        <Link to="/add-expense">
+          <CreditCard className="mr-1 h-4 w-4" />
+          Add Expense
+        </Link>
       </Button>
       
       <Button size="sm" variant="outline">
