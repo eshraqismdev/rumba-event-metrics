@@ -6,10 +6,17 @@ import { GoalProgress } from '@/components/dashboard/GoalProgress';
 import { EventsTable } from '@/components/dashboard/EventsTable';
 import { TasksList } from '@/components/dashboard/TasksList';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
+import { ActionButtons } from '@/components/dashboard/ActionButtons';
 
 const Dashboard = () => {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Action Buttons */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <ActionButtons />
+      </div>
+      
       {/* Performance Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
