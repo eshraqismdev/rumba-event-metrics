@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import AddEvent from "./pages/AddEvent";
 import AddData from "./pages/AddData";
-import AddExpense from "./pages/AddExpense";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import { AppShell } from "./components/layout/AppShell";
 
@@ -35,9 +35,9 @@ const App = () => (
               <AddData />
             </AppShell>
           } />
-          <Route path="/add-expense" element={
+          <Route path="/reports" element={
             <AppShell>
-              <AddExpense />
+              <Reports />
             </AppShell>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
