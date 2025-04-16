@@ -15,6 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 
 // Form schema definition
 const formSchema = z.object({
@@ -180,7 +181,7 @@ const AddData = () => {
       </div>
       
       <Tabs defaultValue="event">
-        <TabsList className="w-full max-w-md mb-6">
+        <TabsList className="grid grid-cols-3 mb-6 w-full max-w-md">
           <TabsTrigger value="event" className="flex-1">Event Details</TabsTrigger>
           <TabsTrigger value="expenses" className="flex-1">Expenses & Promoters</TabsTrigger>
         </TabsList>
