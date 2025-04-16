@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Bell, PlusCircle, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, PlusCircle, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,15 +12,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TimeFilter } from '../dashboard/TimeFilter';
+import { toast } from 'sonner';
 
 export function Header() {
+  const navigate = useNavigate();
+  
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('user');
+    toast.success("You've been logged out successfully");
+    navigate('/login');
+  };
+  
   return (
     <header className="w-full h-16 border-b bg-background flex items-center px-6 sticky top-0 z-10">
       <div className="md:ml-64 w-full flex items-center justify-between">
         <TimeFilter />
         
         <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => navigate('/add-event')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Event
           </Button>
@@ -36,12 +47,17 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Admin</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <SettingsIcon className="mr-2 h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

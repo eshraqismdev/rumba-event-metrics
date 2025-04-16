@@ -1,29 +1,40 @@
 import React, { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { useNavigate } from 'react-router-dom';
-import { PlusCircle, Trash2, Coins, Receipt, Users, BadgeDollarSign } from 'lucide-react';
-
-import { Button } from "@/components/ui/button";
+import * as z from "zod";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/sonner";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
-// Mock events data - in a real app this would come from API/database
-const mockEvents = [
-  { id: '1', name: 'Friday Night Rumba (April 12)' },
-  { id: '2', name: 'Saturday Exclusive (April 13)' },
-  { id: '3', name: 'Friday Night Rumba (April 19)' },
-  { id: '4', name: 'Saturday Exclusive (April 20)' },
-];
+// Form schema definition
+const formSchema = z.object({
+  eventId: z.string().min(1, "Event ID is required"),
+  date: z.string().min(1, "Date is required"),
+  totalAttendees: z.string().min(1, "Total attendees is required"),
+  netRevenue: z.string().min(1, "Net revenue is required"),
+  grossCommission: z.string().min(1, "Gross commission is required"),
+  netCommission: z.string().min(1, "Net commission is required"),
+  tableCommissions: z.string().optional(),
+  vipCommissions: z.string().optional(),
+  adSpend: z.string().optional(),
+  promoterExpenses: z.string().optional(),
+  staffExpenses: z.string().optional(),
+  otherExpenses: z.string().optional(),
+  venueExpenses: z.string().optional(),
+  notes: z.string().optional(),
+});
 
-// Define type for dynamic form fields
+// Dynamic form interface definitions
 interface Promoter {
   name: string;
   girlsCount: string;
@@ -37,7 +48,7 @@ interface StaffMember {
 }
 
 interface TableCommission {
-  promoterName: string;
+  promoter: string;
   amount: string;
 }
 
@@ -49,58 +60,34 @@ interface AdCampaign {
   leads: string;
 }
 
-const formSchema = z.object({
-  eventId: z.string(),
-  date: z.string(),
-  totalAttendees: z.string(),
-  netRevenue: z.string().transform((val) => (val === "" ? "0" : val)),
-  grossCommission: z.string().transform((val) => (val === "" ? "0" : val)),
-  netCommission: z.string().transform((val) => (val === "" ? "0" : val)),
-  tableCommissions: z.string().transform((val) => (val === "" ? "0" : val)),
-  vipCommissions: z.string().transform((val) => (val === "" ? "0" : val)),
-  adSpend: z.string().transform((val) => (val === "" ? "0" : val)),
-  adReach: z.string().optional(),
-  adClicks: z.string().optional(),
-  adLeads: z.string().optional(),
-  websiteLeads: z.string().optional(),
-  attendance: z.string().optional(),
-  numTables: z.string().transform((val) => (val === "" ? "0" : val)),
-  revenue: z.string().transform((val) => (val === "" ? "0" : val)),
-  entranceRevenue: z.string().transform((val) => (val === "" ? "0" : val)),
-  notes: z.string().optional(),
-});
-
 const AddData = () => {
   const navigate = useNavigate();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
-  const [promoters, setPromoters] = useState<Promoter[]>([{ name: '', girlsCount: '', payment: '' }]);
+  // Dynamic form state
+  const [promoters, setPromoters] = useState<Promoter[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [tableCommissions, setTableCommissions] = useState<TableCommission[]>([]);
   const [adCampaigns, setAdCampaigns] = useState<AdCampaign[]>([]);
   
+  // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       eventId: "",
-      date: new Date().toISOString().split('T')[0],
+      date: "",
       totalAttendees: "",
       netRevenue: "",
       grossCommission: "",
       netCommission: "",
-      promoters: "",
-      staff: "",
       tableCommissions: "",
       vipCommissions: "",
       adSpend: "",
-      adReach: "",
-      adClicks: "",
-      adLeads: "",
-      websiteLeads: "",
-      attendance: "",
-      numTables: "",
-      revenue: "",
-      entranceRevenue: "",
-      notes: "",
+      promoterExpenses: "",
+      staffExpenses: "",
+      otherExpenses: "",
+      venueExpenses: "",
+      notes: ""
     },
   });
 
@@ -116,607 +103,547 @@ const AddData = () => {
     });
     
     // In a real app, this would save to a database
-    toast.success("Event data and expenses added successfully!");
+    toast.success("Event data added successfully!");
     setTimeout(() => navigate("/"), 1500);
   };
 
+  // Dynamic form handlers
   const addPromoter = () => {
-    setPromoters([...promoters, { name: '', girlsCount: '', payment: '' }]);
+    setPromoters([...promoters, { name: "", girlsCount: "", payment: "" }]);
   };
 
   const removePromoter = (index: number) => {
-    const updatedPromoters = [...promoters];
-    updatedPromoters.splice(index, 1);
-    setPromoters(updatedPromoters);
+    const newPromoters = [...promoters];
+    newPromoters.splice(index, 1);
+    setPromoters(newPromoters);
+  };
+
+  const updatePromoter = (index: number, field: keyof Promoter, value: string) => {
+    const newPromoters = [...promoters];
+    newPromoters[index][field] = value;
+    setPromoters(newPromoters);
   };
 
   const addStaffMember = () => {
-    setStaff([...staff, { role: '', name: '', payment: '' }]);
+    setStaff([...staff, { role: "", name: "", payment: "" }]);
   };
 
   const removeStaffMember = (index: number) => {
-    const updatedStaff = [...staff];
-    updatedStaff.splice(index, 1);
-    setStaff(updatedStaff);
+    const newStaff = [...staff];
+    newStaff.splice(index, 1);
+    setStaff(newStaff);
+  };
+
+  const updateStaffMember = (index: number, field: keyof StaffMember, value: string) => {
+    const newStaff = [...staff];
+    newStaff[index][field] = value;
+    setStaff(newStaff);
   };
 
   const addTableCommission = () => {
-    setTableCommissions([...tableCommissions, { promoterName: '', amount: '' }]);
+    setTableCommissions([...tableCommissions, { promoter: "", amount: "" }]);
   };
 
   const removeTableCommission = (index: number) => {
-    const updatedTableCommissions = [...tableCommissions];
-    updatedTableCommissions.splice(index, 1);
-    setTableCommissions(updatedTableCommissions);
+    const newTableCommissions = [...tableCommissions];
+    newTableCommissions.splice(index, 1);
+    setTableCommissions(newTableCommissions);
+  };
+
+  const updateTableCommission = (index: number, field: keyof TableCommission, value: string) => {
+    const newTableCommissions = [...tableCommissions];
+    newTableCommissions[index][field] = value;
+    setTableCommissions(newTableCommissions);
   };
 
   const addAdCampaign = () => {
-    setAdCampaigns([...adCampaigns, { platform: '', amount: '', reach: '', clicks: '', leads: '' }]);
+    setAdCampaigns([...adCampaigns, { platform: "", amount: "", reach: "", clicks: "", leads: "" }]);
   };
 
   const removeAdCampaign = (index: number) => {
-    const updatedAdCampaigns = [...adCampaigns];
-    updatedAdCampaigns.splice(index, 1);
-    setAdCampaigns(updatedAdCampaigns);
+    const newAdCampaigns = [...adCampaigns];
+    newAdCampaigns.splice(index, 1);
+    setAdCampaigns(newAdCampaigns);
   };
 
-  const handlePromoterChange = (index: number, field: keyof Promoter, value: string) => {
-    const updatedPromoters = [...promoters];
-    updatedPromoters[index][field] = value;
-    setPromoters(updatedPromoters);
+  const updateAdCampaign = (index: number, field: keyof AdCampaign, value: string) => {
+    const newAdCampaigns = [...adCampaigns];
+    newAdCampaigns[index][field] = value;
+    setAdCampaigns(newAdCampaigns);
   };
-
-  const handleStaffChange = (index: number, field: keyof StaffMember, value: string) => {
-    const updatedStaff = [...staff];
-    updatedStaff[index][field] = value;
-    setStaff(updatedStaff);
-  };
-
-  const handleTableCommissionChange = (index: number, field: keyof TableCommission, value: string) => {
-    const updatedTableCommissions = [...tableCommissions];
-    updatedTableCommissions[index][field] = value;
-    setTableCommissions(updatedTableCommissions);
-  };
-
-  const handleAdCampaignChange = (index: number, field: keyof AdCampaign, value: string) => {
-    const updatedAdCampaigns = [...adCampaigns];
-    updatedAdCampaigns[index][field] = value;
-    setAdCampaigns(updatedAdCampaigns);
-  };
-
-  const selectedEventId = form.watch("eventId");
-  const selectedEvent = mockEvents.find(event => event.id === selectedEventId);
-  const isDealWithEntrance = selectedEventId === '1' || selectedEventId === '3'; // Just for demo purposes
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold mb-2">Add Event Data & Expenses</h1>
-        <p className="text-muted-foreground">Record performance data and expenses for an event</p>
+        <h1 className="text-3xl font-bold">Add Event Data</h1>
+        <p className="text-muted-foreground">Enter event data and expenses</p>
       </div>
       
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Event Details</CardTitle>
-              <CardDescription>Select an event and enter basic information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="eventId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Select Event</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose an event" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {mockEvents.map(event => (
-                            <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {selectedEventId && (
-            <Tabs defaultValue="performance" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="performance">Performance Data</TabsTrigger>
-                <TabsTrigger value="expenses">Expenses</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="performance" className="mt-4 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Performance Metrics</CardTitle>
-                    <CardDescription>Enter the key performance metrics for this event</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="attendance"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Total Attendance</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" placeholder="Number of attendees" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="numTables"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Number of Tables</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" placeholder="0" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="websiteLeads"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Website Leads</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" placeholder="Lead count" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {isDealWithEntrance && (
-                        <FormField
-                          control={form.control}
-                          name="entranceRevenue"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Entrance Revenue (AED)</FormLabel>
-                              <FormControl>
-                                <Input type="number" min="0" placeholder="0" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+      <Tabs defaultValue="event">
+        <TabsList className="w-full max-w-md mb-6">
+          <TabsTrigger value="event" className="flex-1">Event Details</TabsTrigger>
+          <TabsTrigger value="expenses" className="flex-1">Expenses & Promoters</TabsTrigger>
+        </TabsList>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <TabsContent value="event">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Event Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="eventId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Event ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., EVT-001" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      <FormField
-                        control={form.control}
-                        name="revenue"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Total Revenue (AED)</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" placeholder="0" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="grossCommission"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Gross Commission (AED)</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" placeholder="0" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="netCommission"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Net Commission (AED)</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" placeholder="0" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="expenses" className="mt-4 space-y-6">
-                {/* Promoters Expenses */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Promoters Expenses</CardTitle>
-                      <CardDescription>Add information about promoter costs</CardDescription>
-                    </div>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={addPromoter}
-                    >
-                      <PlusCircle className="h-4 w-4 mr-1" /> Add Promoter
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Event Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(new Date(field.value), "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={(date) => {
+                                  setSelectedDate(date);
+                                  field.onChange(date ? format(date, "yyyy-MM-dd") : "");
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="totalAttendees"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total Attendees</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 500" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="netRevenue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Net Revenue (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 25000" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="grossCommission"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gross Commission (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 5000" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="netCommission"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Net Commission (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 4500" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional Notes</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Any additional information about the event" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="expenses">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expenses & Promoters</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold">Promoters</h3>
                     {promoters.map((promoter, index) => (
-                      <div key={`promoter-${index}`} className="grid gap-3 sm:grid-cols-7 items-center">
-                        <div className="sm:col-span-2">
-                          <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                            {index === 0 ? 'Promoter Name' : ''}
-                          </FormLabel>
-                          <Input 
-                            placeholder="Promoter name"
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                          <Label htmlFor={`promoter-${index}-name`}>Name</Label>
+                          <Input
+                            type="text"
+                            id={`promoter-${index}-name`}
                             value={promoter.name}
-                            onChange={(e) => handlePromoterChange(index, 'name', e.target.value)}
+                            onChange={(e) => updatePromoter(index, "name", e.target.value)}
+                            placeholder="Promoter Name"
                           />
                         </div>
-                        
-                        <div className="sm:col-span-2">
-                          <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                            {index === 0 ? 'Number of Girls' : ''}
-                          </FormLabel>
-                          <Input 
+                        <div>
+                          <Label htmlFor={`promoter-${index}-girls`}>Girls Count</Label>
+                          <Input
                             type="number"
-                            min="0"
-                            placeholder="Number of girls"
+                            id={`promoter-${index}-girls`}
                             value={promoter.girlsCount}
-                            onChange={(e) => handlePromoterChange(index, 'girlsCount', e.target.value)}
+                            onChange={(e) => updatePromoter(index, "girlsCount", e.target.value)}
+                            placeholder="Number of Girls"
                           />
                         </div>
-                        
-                        <div className="sm:col-span-2">
-                          <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                            {index === 0 ? 'Payment (AED)' : ''}
-                          </FormLabel>
-                          <Input 
+                        <div>
+                          <Label htmlFor={`promoter-${index}-payment`}>Payment (AED)</Label>
+                          <Input
                             type="number"
-                            min="0"
-                            placeholder="Payment amount"
+                            id={`promoter-${index}-payment`}
                             value={promoter.payment}
-                            onChange={(e) => handlePromoterChange(index, 'payment', e.target.value)}
+                            onChange={(e) => updatePromoter(index, "payment", e.target.value)}
+                            placeholder="Payment Amount"
                           />
                         </div>
-                        
-                        <div className="flex justify-end mt-2 sm:mt-0">
-                          {index > 0 && (
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => removePromoter(index)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
+                        <div>
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removePromoter(index)}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
                         </div>
                       </div>
                     ))}
-                  </CardContent>
-                </Card>
-
-                {/* Staff Expenses */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Staff</CardTitle>
-                      <CardDescription>Add information about staff costs</CardDescription>
-                    </div>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={addStaffMember}
-                    >
-                      <PlusCircle className="h-4 w-4 mr-1" /> Add Staff Member
+                    <Button type="button" variant="secondary" size="sm" onClick={addPromoter}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Promoter
                     </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {staff.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">No staff members added yet</p>
-                    ) : (
-                      staff.map((member, index) => (
-                        <div key={`staff-${index}`} className="grid gap-3 sm:grid-cols-7 items-center">
-                          <div className="sm:col-span-2">
-                            <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                              {index === 0 ? 'Role' : ''}
-                            </FormLabel>
-                            <Input 
-                              placeholder="Role (e.g., Hostess)"
-                              value={member.role}
-                              onChange={(e) => handleStaffChange(index, 'role', e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="sm:col-span-2">
-                            <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                              {index === 0 ? 'Name' : ''}
-                            </FormLabel>
-                            <Input 
-                              placeholder="Staff name"
-                              value={member.name}
-                              onChange={(e) => handleStaffChange(index, 'name', e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="sm:col-span-2">
-                            <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                              {index === 0 ? 'Payment (AED)' : ''}
-                            </FormLabel>
-                            <Input 
-                              type="number"
-                              min="0"
-                              placeholder="Payment amount"
-                              value={member.payment}
-                              onChange={(e) => handleStaffChange(index, 'payment', e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="flex justify-end mt-2 sm:mt-0">
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => removeStaffMember(index)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold">Staff Members</h3>
+                    {staff.map((staffMember, index) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                          <Label htmlFor={`staff-${index}-role`}>Role</Label>
+                          <Input
+                            type="text"
+                            id={`staff-${index}-role`}
+                            value={staffMember.role}
+                            onChange={(e) => updateStaffMember(index, "role", e.target.value)}
+                            placeholder="Staff Role"
+                          />
                         </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Table Commissions */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Table Commissions</CardTitle>
-                      <CardDescription>Add information about table commission expenses</CardDescription>
-                    </div>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={addTableCommission}
-                    >
-                      <PlusCircle className="h-4 w-4 mr-1" /> Add Commission
+                        <div>
+                          <Label htmlFor={`staff-${index}-name`}>Name</Label>
+                          <Input
+                            type="text"
+                            id={`staff-${index}-name`}
+                            value={staffMember.name}
+                            onChange={(e) => updateStaffMember(index, "name", e.target.value)}
+                            placeholder="Staff Name"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`staff-${index}-payment`}>Payment (AED)</Label>
+                          <Input
+                            type="number"
+                            id={`staff-${index}-payment`}
+                            value={staffMember.payment}
+                            onChange={(e) => updateStaffMember(index, "payment", e.target.value)}
+                            placeholder="Payment Amount"
+                          />
+                        </div>
+                        <div>
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeStaffMember(index)}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button type="button" variant="secondary" size="sm" onClick={addStaffMember}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Staff Member
                     </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {tableCommissions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">No table commissions added yet</p>
-                    ) : (
-                      tableCommissions.map((commission, index) => (
-                        <div key={`commission-${index}`} className="grid gap-3 sm:grid-cols-5 items-center">
-                          <div className="sm:col-span-2">
-                            <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                              {index === 0 ? 'Promoter Name' : ''}
-                            </FormLabel>
-                            <Input 
-                              placeholder="Promoter name"
-                              value={commission.promoterName}
-                              onChange={(e) => handleTableCommissionChange(index, 'promoterName', e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="sm:col-span-2">
-                            <FormLabel className={index !== 0 ? 'sr-only' : ''}>
-                              {index === 0 ? 'Amount (AED)' : ''}
-                            </FormLabel>
-                            <Input 
-                              type="number"
-                              min="0"
-                              placeholder="Commission amount"
-                              value={commission.amount}
-                              onChange={(e) => handleTableCommissionChange(index, 'amount', e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="flex justify-end mt-2 sm:mt-0">
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => removeTableCommission(index)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold">Table Commissions</h3>
+                    {tableCommissions.map((commission, index) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                          <Label htmlFor={`table-commission-${index}-promoter`}>Promoter</Label>
+                          <Input
+                            type="text"
+                            id={`table-commission-${index}-promoter`}
+                            value={commission.promoter}
+                            onChange={(e) => updateTableCommission(index, "promoter", e.target.value)}
+                            placeholder="Promoter Name"
+                          />
                         </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Ad Campaigns */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Ad Spend</CardTitle>
-                      <CardDescription>Add information about advertising expenses</CardDescription>
-                    </div>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={addAdCampaign}
-                    >
-                      <PlusCircle className="h-4 w-4 mr-1" /> Add Campaign
+                        <div>
+                          <Label htmlFor={`table-commission-${index}-amount`}>Amount (AED)</Label>
+                          <Input
+                            type="number"
+                            id={`table-commission-${index}-amount`}
+                            value={commission.amount}
+                            onChange={(e) => updateTableCommission(index, "amount", e.target.value)}
+                            placeholder="Commission Amount"
+                          />
+                        </div>
+                        <div>
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeTableCommission(index)}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button type="button" variant="secondary" size="sm" onClick={addTableCommission}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Table Commission
                     </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {adCampaigns.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">No ad campaigns added yet</p>
-                    ) : (
-                      adCampaigns.map((campaign, index) => (
-                        <div key={`ad-${index}`} className="space-y-4 pb-4 border-b border-border last:border-0 last:pb-0">
-                          <div className="grid gap-3 sm:grid-cols-6 items-center">
-                            <div className="sm:col-span-3">
-                              <FormLabel>Platform</FormLabel>
-                              <Input 
-                                placeholder="Platform (e.g., Instagram, Facebook)"
-                                value={campaign.platform}
-                                onChange={(e) => handleAdCampaignChange(index, 'platform', e.target.value)}
-                              />
-                            </div>
-                            
-                            <div className="sm:col-span-2">
-                              <FormLabel>Amount (AED)</FormLabel>
-                              <Input 
-                                type="number"
-                                min="0"
-                                placeholder="Spend amount"
-                                value={campaign.amount}
-                                onChange={(e) => handleAdCampaignChange(index, 'amount', e.target.value)}
-                              />
-                            </div>
-                            
-                            <div className="flex items-end justify-end h-full">
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => removeAdCampaign(index)}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          <div className="grid gap-3 sm:grid-cols-3">
-                            <div>
-                              <FormLabel>Reach</FormLabel>
-                              <Input 
-                                type="number"
-                                min="0"
-                                placeholder="Total reach"
-                                value={campaign.reach}
-                                onChange={(e) => handleAdCampaignChange(index, 'reach', e.target.value)}
-                              />
-                            </div>
-                            
-                            <div>
-                              <FormLabel>Clicks</FormLabel>
-                              <Input 
-                                type="number"
-                                min="0"
-                                placeholder="Total clicks"
-                                value={campaign.clicks}
-                                onChange={(e) => handleAdCampaignChange(index, 'clicks', e.target.value)}
-                              />
-                            </div>
-                            
-                            <div>
-                              <FormLabel>Leads</FormLabel>
-                              <Input 
-                                type="number"
-                                min="0"
-                                placeholder="Total leads"
-                                value={campaign.leads}
-                                onChange={(e) => handleAdCampaignChange(index, 'leads', e.target.value)}
-                              />
-                            </div>
-                          </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold">Ad Campaigns</h3>
+                    {adCampaigns.map((campaign, index) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                        <div>
+                          <Label htmlFor={`ad-campaign-${index}-platform`}>Platform</Label>
+                          <Input
+                            type="text"
+                            id={`ad-campaign-${index}-platform`}
+                            value={campaign.platform}
+                            onChange={(e) => updateAdCampaign(index, "platform", e.target.value)}
+                            placeholder="Platform Name"
+                          />
                         </div>
-                      ))
+                        <div>
+                          <Label htmlFor={`ad-campaign-${index}-amount`}>Amount (AED)</Label>
+                          <Input
+                            type="number"
+                            id={`ad-campaign-${index}-amount`}
+                            value={campaign.amount}
+                            onChange={(e) => updateAdCampaign(index, "amount", e.target.value)}
+                            placeholder="Ad Spend Amount"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`ad-campaign-${index}-reach`}>Reach</Label>
+                          <Input
+                            type="number"
+                            id={`ad-campaign-${index}-reach`}
+                            value={campaign.reach}
+                            onChange={(e) => updateAdCampaign(index, "reach", e.target.value)}
+                            placeholder="Reach"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`ad-campaign-${index}-clicks`}>Clicks</Label>
+                          <Input
+                            type="number"
+                            id={`ad-campaign-${index}-clicks`}
+                            value={campaign.clicks}
+                            onChange={(e) => updateAdCampaign(index, "clicks", e.target.value)}
+                            placeholder="Clicks"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`ad-campaign-${index}-leads`}>Leads</Label>
+                          <Input
+                            type="number"
+                            id={`ad-campaign-${index}-leads`}
+                            value={campaign.leads}
+                            onChange={(e) => updateAdCampaign(index, "leads", e.target.value)}
+                            placeholder="Leads"
+                          />
+                        </div>
+                        <div>
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeAdCampaign(index)}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button type="button" variant="secondary" size="sm" onClick={addAdCampaign}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Ad Campaign
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="tableCommissions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Table Commissions (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 1500" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="vipCommissions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>VIP Commissions (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 2000" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="adSpend"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ad Spend (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 3000" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="promoterExpenses"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Promoter Expenses (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 1000" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="staffExpenses"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Staff Expenses (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 2500" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="venueExpenses"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Venue Expenses (AED)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="E.g., 7000" type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="otherExpenses"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Other Expenses (AED)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="E.g., 500" type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          )}
-
-          {/* Notes */}
-          {selectedEventId && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Notes</CardTitle>
-                <CardDescription>Add any additional notes about this event</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter any additional information here..." 
-                          className="min-h-[120px]" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Submit Buttons */}
-          {selectedEventId && (
-            <div className="flex justify-end gap-4">
-              <Button 
-                type="button" 
-                variant="outline"
-                onClick={() => navigate("/")}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Save Data</Button>
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <div className="flex justify-end mt-6 space-x-4">
+              <Button type="button" variant="outline" onClick={() => navigate("/")}>Cancel</Button>
+              <Button type="submit">Save Event Data</Button>
             </div>
-          )}
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </Tabs>
     </div>
   );
 };
