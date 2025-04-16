@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -107,11 +106,13 @@ const AddData = () => {
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     console.log({
-      ...values,
-      promoters,
-      staff,
-      tableCommissions,
-      adCampaigns
+      formValues: values,
+      dynamicData: {
+        promoters,
+        staff,
+        tableCommissions,
+        adCampaigns
+      }
     });
     
     // In a real app, this would save to a database
@@ -119,7 +120,6 @@ const AddData = () => {
     setTimeout(() => navigate("/"), 1500);
   };
 
-  // Add/remove handlers for dynamic form fields
   const addPromoter = () => {
     setPromoters([...promoters, { name: '', girlsCount: '', payment: '' }]);
   };

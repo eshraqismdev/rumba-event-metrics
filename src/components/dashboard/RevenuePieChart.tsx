@@ -42,36 +42,38 @@ export function RevenuePieChart({ isExpenses = false }: RevenuePieChartProps) {
       config={config}
       className="w-full aspect-[4/3] mx-auto"
     >
-      <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={80}
-          innerRadius={isExpenses ? 0 : 40}
-          fill="#8884d8"
-          dataKey="value"
-          nameKey="name"
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
+      <div>
+        <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius={80}
+            innerRadius={isExpenses ? 0 : 40}
+            fill="#8884d8"
+            dataKey="value"
+            nameKey="name"
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip content={<ChartTooltipContent formatter={(value: number) => [`${value.toLocaleString()} AED`]} />} />
+        </PieChart>
+        
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          {data.map((item) => (
+            <div key={item.name} className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: item.color }}
+              />
+              <span className="text-sm text-muted-foreground">{item.name}</span>
+              <span className="text-sm font-medium ml-auto">{((item.value / data.reduce((sum, i) => sum + i.value, 0)) * 100).toFixed(1)}%</span>
+            </div>
           ))}
-        </Pie>
-        <Tooltip content={<ChartTooltipContent formatter={(value: number) => [`${value.toLocaleString()} AED`]} />} />
-      </PieChart>
-      
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        {data.map((item) => (
-          <div key={item.name} className="flex items-center gap-2">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
-            <span className="text-sm text-muted-foreground">{item.name}</span>
-            <span className="text-sm font-medium ml-auto">{((item.value / data.reduce((sum, i) => sum + i.value, 0)) * 100).toFixed(1)}%</span>
-          </div>
-        ))}
+        </div>
       </div>
     </ChartContainer>
   );
