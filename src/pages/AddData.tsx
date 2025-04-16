@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -174,27 +175,27 @@ const AddData = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-[100vw] px-2 sm:px-4 md:px-6">
       <div>
-        <h1 className="text-3xl font-bold">Add Event Data</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Add Event Data</h1>
         <p className="text-muted-foreground">Enter event data and expenses</p>
       </div>
       
       <Tabs defaultValue="event">
-        <TabsList className="grid grid-cols-3 mb-6 w-full max-w-md">
-          <TabsTrigger value="event" className="flex-1">Event Details</TabsTrigger>
-          <TabsTrigger value="expenses" className="flex-1">Expenses & Promoters</TabsTrigger>
+        <TabsList className="grid grid-cols-2 mb-6 w-full max-w-md">
+          <TabsTrigger value="event">Event Details</TabsTrigger>
+          <TabsTrigger value="expenses">Expenses & Promoters</TabsTrigger>
         </TabsList>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <TabsContent value="event">
-              <Card>
+              <Card className="overflow-hidden">
                 <CardHeader>
                   <CardTitle>Event Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <FormField
                       control={form.control}
                       name="eventId"
@@ -326,7 +327,7 @@ const AddData = () => {
             </TabsContent>
             
             <TabsContent value="expenses">
-              <Card>
+              <Card className="overflow-hidden">
                 <CardHeader>
                   <CardTitle>Expenses & Promoters</CardTitle>
                 </CardHeader>
@@ -334,7 +335,7 @@ const AddData = () => {
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">Promoters</h3>
                     {promoters.map((promoter, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end border p-3 rounded-md">
                         <div>
                           <Label htmlFor={`promoter-${index}-name`}>Name</Label>
                           <Input
@@ -365,7 +366,7 @@ const AddData = () => {
                             placeholder="Payment Amount"
                           />
                         </div>
-                        <div>
+                        <div className="flex justify-end">
                           <Button type="button" variant="destructive" size="sm" onClick={() => removePromoter(index)}>
                             <Trash2 className="h-4 w-4 mr-2" />
                             Remove
@@ -382,7 +383,7 @@ const AddData = () => {
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">Staff Members</h3>
                     {staff.map((staffMember, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end border p-3 rounded-md">
                         <div>
                           <Label htmlFor={`staff-${index}-role`}>Role</Label>
                           <Input
@@ -413,7 +414,7 @@ const AddData = () => {
                             placeholder="Payment Amount"
                           />
                         </div>
-                        <div>
+                        <div className="flex justify-end">
                           <Button type="button" variant="destructive" size="sm" onClick={() => removeStaffMember(index)}>
                             <Trash2 className="h-4 w-4 mr-2" />
                             Remove
@@ -430,7 +431,7 @@ const AddData = () => {
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">Table Commissions</h3>
                     {tableCommissions.map((commission, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end border p-3 rounded-md">
                         <div>
                           <Label htmlFor={`table-commission-${index}-promoter`}>Promoter</Label>
                           <Input
@@ -451,7 +452,7 @@ const AddData = () => {
                             placeholder="Commission Amount"
                           />
                         </div>
-                        <div>
+                        <div className="flex justify-end">
                           <Button type="button" variant="destructive" size="sm" onClick={() => removeTableCommission(index)}>
                             <Trash2 className="h-4 w-4 mr-2" />
                             Remove
@@ -468,7 +469,7 @@ const AddData = () => {
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">Ad Campaigns</h3>
                     {adCampaigns.map((campaign, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end border p-3 rounded-md">
                         <div>
                           <Label htmlFor={`ad-campaign-${index}-platform`}>Platform</Label>
                           <Input
@@ -509,20 +510,19 @@ const AddData = () => {
                             placeholder="Clicks"
                           />
                         </div>
-                        <div>
-                          <Label htmlFor={`ad-campaign-${index}-leads`}>Leads</Label>
-                          <Input
-                            type="number"
-                            id={`ad-campaign-${index}-leads`}
-                            value={campaign.leads}
-                            onChange={(e) => updateAdCampaign(index, "leads", e.target.value)}
-                            placeholder="Leads"
-                          />
-                        </div>
-                        <div>
-                          <Button type="button" variant="destructive" size="sm" onClick={() => removeAdCampaign(index)}>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Remove
+                        <div className="flex items-center justify-between gap-2 sm:col-span-2 lg:col-span-1">
+                          <div className="flex-1">
+                            <Label htmlFor={`ad-campaign-${index}-leads`}>Leads</Label>
+                            <Input
+                              type="number"
+                              id={`ad-campaign-${index}-leads`}
+                              value={campaign.leads}
+                              onChange={(e) => updateAdCampaign(index, "leads", e.target.value)}
+                              placeholder="Leads"
+                            />
+                          </div>
+                          <Button type="button" variant="destructive" size="sm" className="mt-6" onClick={() => removeAdCampaign(index)}>
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -533,7 +533,7 @@ const AddData = () => {
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                     <FormField
                       control={form.control}
                       name="tableCommissions"
@@ -577,7 +577,7 @@ const AddData = () => {
                     />
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                     <FormField
                       control={form.control}
                       name="promoterExpenses"

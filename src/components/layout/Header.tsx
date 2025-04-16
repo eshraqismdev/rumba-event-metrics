@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, HelpCircle, LogOut, MessageCircle, PlusCircle, Settings as SettingsIcon, User } from 'lucide-react';
+import { Bell, HelpCircle, LogOut, Menu, MessageCircle, PlusCircle, Settings as SettingsIcon, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,6 +18,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { NavItem } from './Sidebar';
 
 export function Header() {
   const navigate = useNavigate();
@@ -39,26 +41,81 @@ export function Header() {
     { id: 2, title: 'Staff Update', message: '2 new staff members added', time: '1 hour ago', read: false },
     { id: 3, title: 'Revenue Report', message: 'Weekly report is ready to view', time: '1 day ago', read: true },
   ];
+
+  // Mobile navigation items
+  const navItems = [
+    { name: "Dashboard", path: "/", icon: null },
+    { name: "Add Event", path: "/add-event", icon: null },
+    { name: "Add Data", path: "/add-data", icon: null },
+    { name: "Reports", path: "/reports", icon: null },
+    { name: "Analytics", path: "/analytics", icon: null },
+    { name: "Settings", path: "/settings", icon: null },
+  ];
   
   return (
-    <header className="w-full h-16 border-b bg-background flex items-center px-6 sticky top-0 z-10">
+    <header className="w-full h-16 border-b bg-background flex items-center px-4 sm:px-6 sticky top-0 z-10">
       <div className="md:ml-64 w-full flex items-center justify-between">
-        <TimeFilter />
+        <div className="flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu size={20} />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[240px] p-0">
+              <div className="p-6 border-b">
+                <h2 className="text-2xl font-bold tracking-tight">Rumba</h2>
+                <p className="text-sm text-muted-foreground">Event Metrics</p>
+              </div>
+              <nav className="flex flex-col p-2">
+                {navItems.map((item) => (
+                  <Button
+                    key={item.path}
+                    variant="ghost"
+                    className="justify-start h-10 px-4 py-2"
+                    onClick={() => navigate(item.path)}
+                  >
+                    {item.name}
+                  </Button>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
+          
+          <div className="hidden sm:block">
+            <TimeFilter />
+          </div>
+        </div>
         
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={() => navigate('/add-event')} className="hidden sm:flex">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/add-event')} 
+            className="hidden sm:flex"
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Event
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate('/add-event')}
+            className="sm:hidden"
+          >
+            <PlusCircle size={18} />
           </Button>
           
           {/* Quick help button */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="hidden sm:flex">
                 <HelpCircle size={18} />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80">
+            <PopoverContent className="w-80" align="end">
               <div className="space-y-4">
                 <h4 className="font-medium">Need help?</h4>
                 <div className="space-y-2">

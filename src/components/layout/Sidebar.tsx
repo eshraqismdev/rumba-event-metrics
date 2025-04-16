@@ -5,34 +5,41 @@ import { cn } from '@/lib/utils';
 import { BarChart2, Calendar, Home, PlusCircle, Settings, TrendingUp, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+export interface NavItem {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+}
+
 export function Sidebar() {
   const location = useLocation();
   
+  const navItems: NavItem[] = [
+    { to: "/", icon: <Home size={18} />, label: "Dashboard" },
+    { to: "/add-event", icon: <Calendar size={18} />, label: "Add Event" },
+    { to: "/add-data", icon: <FileText size={18} />, label: "Add Data" },
+    { to: "/reports", icon: <BarChart2 size={18} />, label: "Reports" },
+    { to: "/analytics", icon: <TrendingUp size={18} />, label: "Analytics" },
+    { to: "/settings", icon: <Settings size={18} />, label: "Settings" },
+  ];
+
   return (
-    <aside className="hidden md:flex h-screen w-64 flex-col border-r bg-sidebar text-sidebar-foreground fixed left-0 top-0">
+    <aside className="hidden md:flex h-screen w-64 flex-col border-r bg-sidebar text-sidebar-foreground fixed left-0 top-0 z-20">
       <div className="p-6">
         <h2 className="text-2xl font-bold tracking-tight">Rumba</h2>
         <p className="text-sm text-sidebar-foreground/70">Event Metrics</p>
       </div>
-      <nav className="space-y-1 px-3 py-2 flex-1">
-        <NavItem to="/" icon={<Home size={18} />} isActive={location.pathname === "/"}>
-          Dashboard
-        </NavItem>
-        <NavItem to="/add-event" icon={<Calendar size={18} />} isActive={location.pathname === "/add-event"}>
-          Add Event
-        </NavItem>
-        <NavItem to="/add-data" icon={<FileText size={18} />} isActive={location.pathname === "/add-data"}>
-          Add Data
-        </NavItem>
-        <NavItem to="/reports" icon={<BarChart2 size={18} />} isActive={location.pathname === "/reports"}>
-          Reports
-        </NavItem>
-        <NavItem to="/analytics" icon={<TrendingUp size={18} />} isActive={location.pathname === "/analytics"}>
-          Analytics
-        </NavItem>
-        <NavItem to="/settings" icon={<Settings size={18} />} isActive={location.pathname === "/settings"}>
-          Settings
-        </NavItem>
+      <nav className="space-y-1 px-3 py-2 flex-1 overflow-y-auto">
+        {navItems.map((item) => (
+          <NavItem 
+            key={item.to}
+            to={item.to} 
+            icon={item.icon} 
+            isActive={location.pathname === item.to}
+          >
+            {item.label}
+          </NavItem>
+        ))}
       </nav>
       <div className="p-4 border-t border-sidebar-border">
         <Button asChild className="w-full" size="sm">
@@ -53,7 +60,7 @@ interface NavItemProps {
   isActive: boolean;
 }
 
-function NavItem({ to, icon, children, isActive }: NavItemProps) {
+export function NavItem({ to, icon, children, isActive }: NavItemProps) {
   return (
     <Link 
       to={to}
